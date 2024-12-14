@@ -73,10 +73,6 @@ class BiasTrick(object):
         #  Add a 1 at the beginning of the given tensor's feature dimension.
         #  Hint: See torch.cat().
         # ====== YOUR CODE: ======
-        if not isinstance(x, torch.Tensor):
-            raise TypeError("Input must be a torch.Tensor")
-
-        # Ensure the tensor has at least one dimension
         assert x.dim() > 0, "Scalars are not supported"
 
         # Create a tensor of ones with the same size except the last dimension

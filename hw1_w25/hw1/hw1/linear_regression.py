@@ -32,7 +32,7 @@ class LinearRegressor(BaseEstimator, RegressorMixin):
 
         y_pred = None
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        y_pred = np.dot(X, self.weights_)
         # ========================
 
         return y_pred
@@ -51,7 +51,10 @@ class LinearRegressor(BaseEstimator, RegressorMixin):
 
         w_opt = None
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        r = self.reg_lambda * y.shape[0] * np.eye(X.shape[1])
+        r[0][0] = 0
+        matrix_inverse = np.linalg.inv(np.add(np.dot(X.T, X), r))
+        w_opt = np.dot(matrix_inverse, np.dot(X.T, y))
         # ========================
 
         self.weights_ = w_opt
@@ -77,7 +80,12 @@ def fit_predict_dataframe(
     """
     # TODO: Implement according to the docstring description.
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    filtered_df = None
+    if feature_names is None:
+        filtered_df = df.drop([target_name], axis=1)
+    else:
+        filtered_df = df[feature_names]
+    y_pred = model.fit_predict(np.array(filtered_df), np.array(df[target_name]))
     # ========================
     return y_pred
 
@@ -100,7 +108,8 @@ class BiasTrickTransformer(BaseEstimator, TransformerMixin):
 
         xb = None
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        bias = np.ones((X.shape[0], 1))
+        xb = np.hstack((bias, X))
         # ========================
 
         return xb
@@ -117,7 +126,7 @@ class BostonFeaturesTransformer(BaseEstimator, TransformerMixin):
         # TODO: Your custom initialization, if needed
         # Add any hyperparameters you need and save them as above
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        
         # ========================
 
     def fit(self, X, y=None):
@@ -139,7 +148,8 @@ class BostonFeaturesTransformer(BaseEstimator, TransformerMixin):
 
         X_transformed = None
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        features = PolynomialFeatures(self.degree)
+        X_transformed = features.fit_transform(X)
         # ========================
 
         return X_transformed
@@ -163,7 +173,15 @@ def top_correlated_features(df: DataFrame, target_feature, n=5):
     # TODO: Calculate correlations with target and sort features by it
 
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    correlation = df.corr()[target_feature]
+    correlation = correlation.drop(target_feature, axis=0)
+    abs_correlation = abs(correlation)
+
+    top_n_features = abs_correlation.sort_values(ascending=False).index[:n]
+    top_n_features = list(top_n_features)
+
+    positions = correlation.loc[top_n_features]
+    top_n_corr = list(positions)
     # ========================
 
     return top_n_features, top_n_corr
@@ -179,7 +197,9 @@ def mse_score(y: np.ndarray, y_pred: np.ndarray):
 
     # TODO: Implement MSE using numpy.
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    N = y.shape[0]
+    err = (y - y_pred)
+    mse = sum(np.power(err, 2)) / N
     # ========================
     return mse
 
@@ -194,7 +214,11 @@ def r2_score(y: np.ndarray, y_pred: np.ndarray):
 
     # TODO: Implement R^2 using numpy.
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    N = y.shape[0]
+    err = (y - y_pred)
+    y_hat = y.mean()
+    avg_err = y - y_hat
+    r2 = 1 - (sum(np.power(err, 2)) / sum(np.power(avg_err, 2)))
     # ========================
     return r2
 
@@ -227,7 +251,27 @@ def cv_best_hyperparams(
     #  - You can use MSE or R^2 as a score.
 
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    best_params = None
+    best_mse = np.inf
+    k_fold = sklearn.model_selection.KFold(n_splits=k_folds, shuffle=True)
+
+    for d in degree_range:
+        for l in lambda_range:
+            params = {'linearregressor__reg_lambda': l, 'bostonfeaturestransformer__degree': d}
+            model.set_params(**params)
+            mse = 0
+
+            for id_train, id_test in k_fold.split(X):
+                X_train, X_test = X[id_train], X[id_test]
+                y_train, y_test = y[id_train], y[id_test]
+                model.fit(X_train, y_train)
+                score = mse_score(y_test, model.predict(X_test))
+                mse = mse + score
+
+            mse = mse / k_folds
+            if mse < best_mse:
+                best_mse = mse
+                best_params = params
     # ========================
 
     return best_params

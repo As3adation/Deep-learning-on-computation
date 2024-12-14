@@ -26,16 +26,14 @@ class FirstLastSampler(Sampler):
         # If the length of the data source is N, you should return indices in a
         # first-last ordering, i.e. [0, N-1, 1, N-2, ...].
         # ====== YOUR CODE: ======
-        n = len(self.data_source)
-        left, right = 0, n - 1
-        while left <= right:
-            if left == right:
-                yield left
-            else:
-                yield left
-                yield right
-            left += 1
-            right -= 1
+        size = len(self.data_source)
+        my_list = list(range(size))
+        for i in range(size // 2):
+            yield my_list[i]
+            yield my_list[(size - 1) - i]
+        ## yield middle element in case not event size
+        if size % 2 == 1:
+            yield my_list[size // 2]
         # ========================
 
     def __len__(self):
@@ -68,28 +66,17 @@ def create_train_validation_loaders(
     #  Hint: you can specify a Sampler class for the `DataLoader` instance
     #  you create.
     # ====== YOUR CODE: ======
-    # Total size of the dataset
     dataset_size = len(dataset)
+    indices = torch.randperm(dataset_size)
+    split = int(np.floor(validation_ratio * dataset_size))
 
-    # Generate shuffled indices
-    indices = np.arange(dataset_size)
-    np.random.shuffle(indices)
+    train_indices, val_indices = indices[split:], indices[:split]
+    # Create new random samplers
+    train_sampler = torch.utils.data.sampler.SubsetRandomSampler(train_indices)
+    valid_sampler = torch.utils.data.sampler.SubsetRandomSampler(val_indices)
 
-    # Split indices into validation and training sets 
-    split_idx = int(dataset_size * validation_ratio)
-    valid_indices = set(indices[:split_idx])
-    train_indices = set(indices[split_idx:])
-
-    # Create samplers using FirstLastSampler
-    train_sampler = torch.utils.data.Subset(dataset, train_indices)
-    valid_sampler = torch.utils.data.Subset(dataset, valid_indices)
-
-    #train_dataset = torch.utils.data.Subset(dataset, train_indices)
-    #valid_dataset = torch.utils.data.Subset(dataset, valid_indices)
-
-    # Create DataLoaders using the samplers
-    dl_train = torch.utils.data.DataLoader(dataset, batch_size=batch_size, sampler=train_sampler, num_workers=num_workers)
-    dl_valid = torch.utils.data.DataLoader(dataset, batch_size=batch_size, sampler=valid_sampler, num_workers=num_workers)
+    dl_train = torch.utils.data.DataLoader(dataset=dataset, batch_size=batch_size, num_workers=num_workers, sampler=train_sampler)
+    dl_valid = torch.utils.data.DataLoader(dataset=dataset, batch_size=batch_size, num_workers=num_workers, sampler=valid_sampler)
 
     return dl_train, dl_valid
     #=========================
