@@ -85,8 +85,10 @@ class Trainer(abc.ABC):
             # ====== YOUR CODE: ======
             train_epoch_result = self.train_epoch(dl_train, **kw)
             test_epoch_result = self.test_epoch(dl_test, **kw)
+            
             train_loss.append(sum(train_epoch_result.losses) / len(train_epoch_result.losses))
             train_acc.append(train_epoch_result.accuracy)
+            
             test_loss.append(sum(test_epoch_result.losses) / len(test_epoch_result.losses))
             test_acc.append(test_epoch_result.accuracy)
             
@@ -272,9 +274,15 @@ class ClassifierTrainer(Trainer):
         #  - Update parameters
         #  - Classify and calculate number of correct predictions
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
-        # ========================
+        x_scores = self.model.forward(X)
+        self.optimizer.zero_grad()
 
+        batch_loss = self.loss_fn(x_scores, y)
+        batch_loss.backward()
+        self.optimizer.step()
+        y_classify = self.model.classify(X)
+        num_correct = int(((y == y_classify).sum()))
+        # ========================
         return BatchResult(batch_loss, num_correct)
 
     def test_batch(self, batch) -> BatchResult:
@@ -292,7 +300,11 @@ class ClassifierTrainer(Trainer):
             #  - Forward pass
             #  - Calculate number of correct predictions
             # ====== YOUR CODE: ======
-            raise NotImplementedError()
+            x_scores = self.model(X)
+
+            batch_loss = self.loss_fn(x_scores, y)
+            y_classify = self.model.classify(X)
+            num_correct = int(((y == y_classify).sum()))
             # ========================
 
         return BatchResult(batch_loss, num_correct)

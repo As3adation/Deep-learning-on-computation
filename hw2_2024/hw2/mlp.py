@@ -47,24 +47,21 @@ class MLP(nn.Module):
         assert len(nonlins) == len(dims)
         self.in_dim = in_dim
         self.out_dim = dims[-1]
-
-        # TODO:
-        #  - Initialize the layers according to the requested dimensions. Use
-        #    either nn.Linear layers or create W, b tensors per layer and wrap them
-        #    with nn.Parameter.
-        #  - Either instantiate the activations based on their name or use the provided
-        #    instances.
-        # ====== YOUR CODE: ======
-        raise NotImplementedError()
-        # ========================
+        super().__init__()
+        layers = []
+        dims = [in_dim] + dims
+        for i in range(len(dims) - 1):
+            layers.append(nn.Linear(dims[i], dims[i + 1], bias=True))
+            if nonlins[i] in ACTIVATIONS:
+                layers.append(ACTIVATIONS[nonlins[i]](
+                    **ACTIVATION_DEFAULT_KWARGS[nonlins[i]]))
+            else:
+                layers.append(nonlins[i])
+        self.layers = nn.Sequential(*layers)
 
     def forward(self, x: Tensor) -> Tensor:
         """
         :param x: An input tensor, of shape (N, D) containing N samples with D features.
         :return: An output tensor of shape (N, D_out) where D_out is the output dim.
         """
-        # TODO: Implement the model's forward pass. Make sure the input and output
-        #  shapes are as expected.
-        # ====== YOUR CODE: ======
-        raise NotImplementedError()
-        # ========================
+        return self.layers(x)
