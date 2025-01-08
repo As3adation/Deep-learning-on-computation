@@ -107,7 +107,21 @@ def cnn_experiment(
     #   for you automatically.
     fit_res = None
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    channels = []
+    for el in filters_per_layer:
+        channels.extend([el] * layers_per_block)
+        
+    model = model_cls(ds_train[0][0].shape, 10, channels, pool_every, hidden_dims, pooling_params=dict(kernel_size=2)
+                      ,conv_params=dict(kernel_size=3, padding=1, stride=1) )
+
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=reg, betas=(0.10, 0.98))
+    loss_func = torch.nn.CrossEntropyLoss()
+    trainer = ClassifierTrainer(model, loss_func, optimizer, device)
+
+    dl_train = torch.utils.data.DataLoader(ds_train, bs_train, shuffle=False)
+    dl_test = torch.utils.data.DataLoader(ds_test, bs_test , shuffle=False)
+    
+    fit_res =trainer.fit(dl_train,dl_test,epochs,early_stopping=early_stopping,max_batches=batches)
     # ========================
 
     save_experiment(run_name, out_dir, cfg, fit_res)

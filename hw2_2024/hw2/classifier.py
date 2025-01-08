@@ -22,7 +22,7 @@ class Classifier(nn.Module, ABC):
 
         # TODO: Add any additional initializations here, if you need them.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        
         # ========================
 
     def forward(self, x: Tensor) -> Tensor:
@@ -34,7 +34,7 @@ class Classifier(nn.Module, ABC):
 
         # TODO: Implement the forward pass, returning raw scores from the wrapped model.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        z = self.model.forward(x)
         # ========================
         assert z.shape[0] == x.shape[0] and z.ndim == 2, "raw scores should be (N, C)"
         return z
@@ -47,7 +47,7 @@ class Classifier(nn.Module, ABC):
         """
         # TODO: Calcualtes class scores for each sample.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        z = self.forward(x)
         # ========================
         return self.predict_proba_scores(z)
 
@@ -59,7 +59,8 @@ class Classifier(nn.Module, ABC):
         """
         # TODO: Calculate class probabilities for the input.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        soft_max = nn.Softmax(dim=1)
+        return soft_max(z)
         # ========================
 
     def classify(self, x: Tensor) -> Tensor:
@@ -96,7 +97,7 @@ class ArgMaxClassifier(Classifier):
         #  Classify each sample to one of C classes based on the highest score.
         #  Output should be a (N,) integer tensor.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        return torch.argmax(y_proba, dim=1)
         # ========================
 
 
