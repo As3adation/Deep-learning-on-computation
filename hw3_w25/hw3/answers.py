@@ -79,12 +79,17 @@ The generated text can show memory longer than the sequence length due to severa
 part1_q3 = r"""
 **Your answer:**
 
+Batches must remain in order because each batch depends on information from the previous ones. The model's hidden state carries forward important context that the next batch needs. This sequential processing is necessary for the model to learn and understand patterns that span across multiple batches.
 """
 
 part1_q4 = r"""
 **Your answer:**
 
+Lower temperatures make the model play it safe -> it sticks to what it knows will work, leading to text that makes sense but might be a bit boring.
 
+Higher temperatures make the model more random in its choices -> its willing to try any character, which usually creates text that doesn't make much sense.
+
+Very low temperatures make the model very cautious -> it always goes for the safest choice, leading to text that is clear but might keep repeating the same patterns.
 """
 # ==============
 
@@ -93,6 +98,7 @@ part1_q4 = r"""
 # Part 2 answers
 
 PART2_CUSTOM_DATA_URL = None
+#PART2_CUSTOM_DATA_URL = 'https://github.com/AviaAvraham1/TempDatasets/raw/refs/heads/main/George_W_Bush2.zip'
 
 
 def part2_vae_hyperparams():
@@ -101,18 +107,23 @@ def part2_vae_hyperparams():
     )
     # TODO: Tweak the hyperparameters to generate a former president.
     # ====== YOUR CODE: ======
-    hypers["batch_size"] = 96
-    hypers["h_dim"] = 512
-    hypers["z_dim"] = 64
-    hypers["x_sigma2"] = 0.1
-    hypers["learn_rate"] = 0.0002
-    hypers["betas"] = (0.9, 0.999)
+    hypers = dict(
+        batch_size = 64,
+        h_dim = 256,
+        z_dim = 64,
+        x_sigma2 = 0.0015,
+        learn_rate = 0.0003,
+        betas = (0.9, 0.9)
+    )
     # ========================
     return hypers
 
 
 part2_q1 = r"""
 **Your answer:**
+The sigma value controls how much the model can experiment and deviate from its standard output
+1. Low sigma values make the model generate images that are very close to what it learned during training -> basically staying close to its comfort zone.
+2. High sigma values let the model take more risks and create images that are different from what it typically produces during training.
 
 
 """
@@ -120,19 +131,24 @@ part2_q1 = r"""
 part2_q2 = r"""
 **Your answer:**
 
+1. **Reconstruction loss** shows how well the decoder recreated the original input. **KL divergence** measures how close the VAE's learned patterns are to the expected distribution.
+2. KL divergence loss adjusts the models internal values like mu, sigma. to make its output distribution match what we want.
+3. Using KL divergence helps the model create images that look more like the original ones because it keeps the model's outputs close to what it was trained on.
+
 
 """
 
 part2_q3 = r"""
 **Your answer:**
-
+By maximizing how well our model fits the data we see, we can better understand what kind of distribution produced that data in the first place. This helps us understand where the data originally came from and what patterns it follows.
 
 
 """
 
 part2_q4 = r"""
 **Your answer:**
-
+1. Log numbers are smaller and easier to work with in calculations, which helps avoid computational errors.
+2. When we use log, we can add numbers instead of multiplying them. Adding is simpler and more stable than multiplying lots of probabilities together.
 """
 
 # Part 3 answers
@@ -142,35 +158,73 @@ def part3_gan_hyperparams():
     )
     # TODO: Tweak the hyperparameters to generate a former president.
     # ====== YOUR CODE: ======
-
+    hypers = dict(
+        batch_size=16,
+        z_dim=8,
+        data_label=1,
+        label_noise=0.1,
+        discriminator_optimizer=dict(
+            type="Adam",
+            lr=0.0002,
+        ),
+        generator_optimizer=dict(
+            type="Adam",
+            lr=0.0002,
+        ),
+    )
     # ========================
     return hypers
 
 part3_q1 = r"""
 **Your answer:**
+GANs training process requires careful management of gradients depending on which part we are training:
+1. **Discriminator training phase:**
+
+    a. uses both real and generated data.
+    
+    b. we drop the generators gradients here since we are only training the discriminator to get better at spotting fakes.
+    
+    c. keeping generator gradients would mess with its learning process.
+
+2. **Generator training phase:**
+
+    a. generator creates fake data for the discriminator to evaluate.
+    
+    b. we keep the gradients this time because we need them to update the generators weights.
+    
+    c. these gradients tell the generator how to adjust to create more convincing fakes.
+
+So gradients are enabled when updating the generator to help it improve, and disabled when training the discriminator to prevent unwanted changes to the generator.
+
 
 
 """
 
 part3_q2 = r"""
 **Your answer:**
+1. looking at just the generator's loss isn't enough to decide when to stop training. Even if the generator seems to be doing well at fooling the discriminator, that doesn't mean it's creating good images. The quality and variety of the generated images matter more than just the loss numbers.
 
+2. when we see the discriminators loss doesnt chnage while the generators loss drops, it suggests the generator is getting better at fooling a weak discriminator. This usually means there is a problem with the training balance, so we want both parts to improve together, not just one getting better while the other stays stuck.
 
 """
 
 part3_q3 = r"""
 **Your answer:**
 
+VAE images are more blurry because they are trained to minimize the difference between input and output images. This makes the model play it safe and produce smooth images that look similar to each other.
 
+GAN images are sharper because the generator has to fool a discriminator instead of matching pixels. Instead of trying to copy images directly, it learns what makes images look realistic by competing with the discriminator. This competition pushes it to create more detailed and clear outputs.
+
+-> VAEs  aim for accurate reconstruction which leads to blurry but consistent images, while GANs aim for realism which leads to sharper, more varied results.
 
 """
 
 
-
 PART3_CUSTOM_DATA_URL = None
+#PART3_CUSTOM_DATA_URL = 'https://github.com/AviaAvraham1/TempDatasets/raw/refs/heads/main/George_W_Bush2.zip'
 
 
-def part4_transformer_encoder_hyperparams():
+def part3_transformer_encoder_hyperparams():
     hypers = dict(
         embed_dim = 0, 
         num_heads = 0,
@@ -183,51 +237,70 @@ def part4_transformer_encoder_hyperparams():
 
     # TODO: Tweak the hyperparameters to train the transformer encoder.
     # ====== YOUR CODE: ======
-    
+    hypers['embed_dim'] = 128
+    hypers['num_heads'] = 4
+    hypers['num_layers'] = 4
+    hypers['hidden_dim'] = 300 #320
+    hypers['window_size'] = 64 #180
+    hypers['droupout'] = 0.1
+    hypers['lr'] = 0.001
     # ========================
     return hypers
 
 
 
 
-part3_q1 = r"""
-**Your answer:**
-
-"""
-
-part3_q2 = r"""
-**Your answer:**
-
-
-"""
-
-
 part4_q1 = r"""
 **Your answer:**
+1. Each layer in the encoder can only look at a small window of nearby tokens at a time. But when we stack multiple layers, they work together to see a bigger picture. Each new layer builds on what the previous layer learned, to spread information further.
 
+2. Each layer processes the output of the previous layer, allowing information to spread further than the initial window size.
 
+    a. layer 1 processes a token with its direct neighbors. 
+    
+    b. layer 2 then processes those outputs, meaning each token now includes information from its neighbors' neighbors.
+    
+    c. as this continues through more layers, the context grows wider. 
+
+3. In the final layer, each token has collected information from tokens far beyond its initial window size. This happens because each previous layer helped spread information further along the sequence, letting the last layer work with much more context than a single window.
 """
 
 part4_q2 = r"""
 **Your answer:**
 
+we need to find a way to get more global context without affecting the computational cost which os O(nw). we can use a dialated window (keeping the same number of tokens but skipping some, and paying attention to ones that are further apart).
+
+by spacing out which tokens we look at, we can capture patterns across longer distances without adding computation time.
 
 """
 
 
-part4_q3= r"""
+part5_q1 = r"""
 **Your answer:**
 
 
 """
 
-part4_q4 = r"""
+part5_q2 = r"""
 **Your answer:**
 
 
 """
 
-part4_q5 = r"""
+
+part5_q3= r"""
+**Your answer:**
+
+
+"""
+
+part5_q4 = r"""
+**Your answer:**
+
+
+"""
+
+part5_q5 = r"""
 **Your answer:**
 
 
