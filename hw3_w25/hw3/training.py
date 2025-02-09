@@ -309,7 +309,12 @@ class VAETrainer(Trainer):
         x = x.to(self.device)  # Image batch (N,C,H,W)
         # TODO: Train a VAE on one batch.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        reconstructed, mu, log_sigma2 = self.model(x)
+        loss, data_loss, _ = self.loss_fn(x, reconstructed, mu, log_sigma2)
+        
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
         # ========================
 
         return BatchResult(loss.item(), 1 / data_loss.item())
@@ -321,7 +326,8 @@ class VAETrainer(Trainer):
         with torch.no_grad():
             # TODO: Evaluate a VAE on one batch.
             # ====== YOUR CODE: ======
-            raise NotImplementedError()    
+            reconstructed, mu, log_sigma2 = self.model(x)
+            loss, data_loss, _ = self.loss_fn(x, reconstructed, mu, log_sigma2)  
             # ========================
 
         return BatchResult(loss.item(), 1 / data_loss.item())
@@ -340,7 +346,13 @@ class TransformerEncoderTrainer(Trainer):
         # TODO:
         #  fill out the training loop.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        y_pred = self.model(input_ids, attention_mask).squeeze(-1)
+        self.optimizer.zero_grad()
+        loss = self.loss_fn(y_pred, label)
+        loss.backward()
+        self.optimizer.step()
+        predictions = torch.round(torch.sigmoid(y_pred))
+        num_correct = torch.sum(predictions == label)
         # ========================
         
         
@@ -359,7 +371,10 @@ class TransformerEncoderTrainer(Trainer):
             # TODO:
             #  fill out the testing loop.
             # ====== YOUR CODE: ======
-            raise NotImplementedError()
+            y_pred = self.model(input_ids, attention_mask).squeeze(-1)
+            loss = self.loss_fn(y_pred, label)
+            predictions = torch.round(torch.sigmoid(y_pred))
+            num_correct = torch.sum(predictions == label)
             # ========================
 
             
@@ -378,9 +393,18 @@ class FineTuningTrainer(Trainer):
         # TODO:
         #  fill out the training loop.
         # ====== YOUR CODE: ======
-
-        raise NotImplementedError()
         
+        self.model.train()
+        outputs = self.model(input_ids=input_ids, attention_mask=attention_masks, labels=labels)
+        loss = outputs.loss      
+        self.optimizer.zero_grad()
+        
+        loss.backward()
+        self.optimizer.step()
+        logits = outputs.logits
+        
+        predictions = torch.argmax(logits, dim=-1)
+        num_correct = (predictions == labels).sum().item()
         # ========================
         
         return BatchResult(loss, num_correct)
@@ -395,6 +419,12 @@ class FineTuningTrainer(Trainer):
             # TODO:
             #  fill out the training loop.
             # ====== YOUR CODE: ======
-            raise NotImplementedError()
+            self.model.eval()
+            outputs = self.model(input_ids=input_ids, attention_mask=attention_masks, labels=labels)
+            loss = outputs.loss
+            logits = outputs.logits
+            
+            predictions = torch.argmax(logits, dim=-1)
+            num_correct = (predictions == labels).sum().item()
             # ========================
         return BatchResult(loss, num_correct)
